@@ -1,4 +1,5 @@
 <!-- resources/views/admin/book_inventory.blade.php -->
+<!-- resources/views/admin/book_inventory.blade.php -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -42,97 +43,91 @@
         <div class="filter-action-container">
             <!-- Filter Bar -->
             <div class="filter-bar">
-                <label for="category-filter">Filter:</label>
-                <input type="text" id="category-filter" placeholder="Title">
-                <input type="text" id="status-filter" placeholder="Category">
-                <input type="text" id="availability-filter" placeholder="Researcher">
-                <button class="apply-btn">Apply</button>
+                <label for="title-filter">Title:</label>
+                <input type="text" id="title-filter" placeholder="Enter title">
+                <label for="category-filter">Category:</label>
+                <input type="text" id="category-filter" placeholder="Enter category">
+                <label for="researcher-filter">Researcher:</label>
+                <input type="text" id="researcher-filter" placeholder="Enter researcher">
+                <button class="apply-btn" onclick="applyFilters()">Apply</button>
             </div>
             <!-- Action Buttons -->
             <div class="action-buttons">
                 <button type="button" onclick="openAddBookModal()">Add Book</button>
-                 <!-- <button class="edit-btn" onclick="openEditModal()">Edit</button>-->
-                <!--<button class="archive-btn" onclick="openArchiveModal()">Archive</button>-->
             </div>
         </div>
 
         <!-- Book List -->
-    <div class="book-list-container">
-        <table class="book-list-table">
-            <thead>
-                <tr>
-                    <th>Book Number</th>
-                    <th>Research Title</th>
-                    <th>Authors</th>
-                    <th>Category</th>
-                    <th>Restriction Code</th>
-                    <th class="actions-header">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($books as $book)
-                    <tr data-book-id="{{ $book->id }}">
-                        <td>{{ $book->book_number }}</td>
-                        <td>{{ $book->study_title }}</td>
-                        <td>{{ $book->authors }}</td>
-                        <td>{{ $book->categories }}</td>
-                        <td>{{ $book->restriction_codes }}</td>
-                        <td>
-                            <button type="button" class="edit-btn" onclick="openEditModal({{ $book->id }})">Edit</button>
-                            <button type="button" class="archive-btn" onclick="confirmArchive({{ $book->id }})">
-                                Archive
-                            </button>
-                        </td>
+        <div class="book-list-container">
+            <table class="book-list-table">
+                <thead>
+                    <tr>
+                        <th>Book Number</th>
+                        <th>Title</th>
+                        <th>Researchers</th>
+                        <th>Category</th>
+                        <th>Book Code</th>
+                        <th>Status</th>
+                        <th class="actions-header">Actions</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach ($books as $book)
+                        <tr data-book-id="{{ $book->id }}">
+                            <td>{{ $book->book_number }}</td>
+                            <td>{{ $book->title }}</td>
+                            <td>{{ $book->researchers }}</td>
+                            <td>{{ $book->category }}</td>
+                            <td>{{ $book->book_code }}</td>
+                            <td>{{ $book->status }}</td>
+                            <td>
+                                <button type="button" class="view-btn" onclick="openViewModal({{ $book->id }})">View</button>
+                                <button type="button" class="edit-btn" onclick="openEditModal({{ $book->id }})">Edit</button>
+                                <button type="button" class="archive-btn" onclick="confirmArchive({{ $book->id }})">Archive</button>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<!--js for filter bar in book inventory-->
-<script src="{{ asset('js/jquery.min.js') }}"></script>
-<script>
-    // Apply search filters
-    function applyFilters() {
-        var category = document.getElementById('category-filter').value;
-        var status = document.getElementById('status-filter').value;
-        var researcher = document.getElementById('availability-filter').value;
+    <!-- Modals -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeViewModal()">&times;</span>
+            <div id="viewBookDetails"></div>
+        </div>
+    </div>
+    
+    <script>
+        function openViewModal(bookId) {
+            // AJAX call to fetch the detailed information of the book
+            fetch(`/admin/book/${bookId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const details = `
+                        <h2>Book Details</h2>
+                        <p><strong>Title:</strong> ${data.title}</p>
+                        <p><strong>Researchers:</strong> ${data.researchers}</p>
+                        <p><strong>Category:</strong> ${data.category}</p>
+                        <p><strong>Location:</strong> ${data.location}</p>
+                        <p><strong>Abstract:</strong> ${data.abstract}</p>
+                        <p><strong>Book Code:</strong> ${data.book_code}</p>
+                        <p><strong>Status:</strong> ${data.status}</p>
+                    `;
+                    document.getElementById('viewBookDetails').innerHTML = details;
+                    document.getElementById('viewModal').style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error));
+        }
 
-        $.ajax({
-            url: '{{ route("admin.book_inventory") }}',
-            method: 'GET',
-            data: {
-                category: category,
-                status: status,
-                researcher: researcher
-            },
-            success: function(response) {
-                // Update the book list with the partial view
-                $('.book-list-container').html(response);
-            }
-        });
-    }
-
-    // Clear search functionality
-    $('.clear-btn').click(function() {
-        // Clear filters
-        $('#category-filter').val('');
-        $('#status-filter').val('');
-        $('#availability-filter').val('');
-
-        // Make an AJAX request to get all books
-        $.ajax({
-            url: '{{ route("admin.book_inventory") }}',
-            method: 'GET',
-            success: function(response) {
-                // Reset the book list to show all books
-                $('.book-list-container').html(response);
-            }
-        });
-    });
-</script>
-
+        function closeViewModal() {
+            document.getElementById('viewModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
 <!-- Add Book Modal -->
 <div class="modal-overlay" id="addBookModal" style="display: none;">
     <div class="modal-content">
